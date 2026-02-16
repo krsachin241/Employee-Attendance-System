@@ -10,7 +10,7 @@ function Profile() {
       setLoading(true); setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/auth/profile', {
+        const res = await fetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

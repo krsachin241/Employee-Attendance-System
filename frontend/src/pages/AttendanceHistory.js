@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
+const STATUS_COLORS = {
+  present: { bg: '#4caf50', text: '#fff', light: '#e8f5e9', dark: '#2e7d32', label: 'Present' },
+  late: { bg: '#ffc107', text: '#fff', light: '#fff3e0', dark: '#ef6c00', label: 'Late' },
+  absent: { bg: '#f44336', text: '#fff', light: '#fce4ec', dark: '#e53935', label: 'Absent' },
+  'half-day': { bg: '#ff9800', text: '#fff', light: '#fff3e0', dark: '#e65100', label: 'Half Day' },
+};
+
 function StatusBadge({ status }) {
-  const colors = {
-    present: { bg: '#e8f5e9', color: '#2e7d32' },
-    late: { bg: '#fff3e0', color: '#ef6c00' },
-    absent: { bg: '#fce4ec', color: '#e53935' },
-    'half-day': { bg: '#ede7f6', color: '#5e35b1' },
-  };
-  const c = colors[status] || { bg: '#f5f5f5', color: '#888' };
+  const c = STATUS_COLORS[status] || { light: '#f5f5f5', dark: '#888' };
   return (
-    <span style={{ background: c.bg, color: c.color, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+    <span style={{ background: c.light, color: c.dark, padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>
       {status}
     </span>
   );
@@ -22,6 +23,8 @@ function AttendanceHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'table'
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -32,7 +35,7 @@ function AttendanceHistory() {
       setLoading(true); setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/attendance/history/${user.id}`, {
+        const res = await fetch('/api/attendance/my-history', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -48,7 +51,7 @@ function AttendanceHistory() {
     const fetchSummary = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/attendance/monthly-summary/${user.id}/${month}`, {
+        const res = await fetch(`/api/attendance/my-summary?month=${month}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -59,76 +62,289 @@ function AttendanceHistory() {
     if (user) fetchSummary();
   }, [month, user]);
 
-  return (
-    <div style={{ maxWidth: 900, margin: '32px auto', padding: '0 20px' }}>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>Attendance History</h2>
-      <p style={{ color: '#888', marginBottom: 24, fontSize: 15 }}>View your past attendance and monthly summary</p>
+  // Calendar helpers
+  const [calYear, calMonth] = month.split('-').map(Number);
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const firstDayOfWeek = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
 
-      {/* Month Picker & Summary */}
-      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
-        <div style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', flex: 1, minWidth: 200 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#666', display: 'block', marginBottom: 8 }}>Select Month</label>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            style={{ padding: '8px 14px', border: '1.5px solid #ddd', borderRadius: 8, fontSize: 15, width: '100%', boxSizing: 'border-box' }} />
+  // Build a map: dateStr -> record
+  const recordMap = {};
+  history.forEach(rec => {
+    if (rec.date) {
+      const d = new Date(rec.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      recordMap[key] = rec;
+    }
+  });
+
+  const todayStr = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+  })();
+
+  const navigateMonth = (dir) => {
+    let y = calYear, m = calMonth + dir;
+    if (m < 1) { m = 12; y--; }
+    if (m > 12) { m = 1; y++; }
+    setMonth(`${y}-${String(m).padStart(2, '0')}`);
+    setSelectedDate(null);
+  };
+
+  const selectedRecord = selectedDate ? recordMap[selectedDate] : null;
+  const monthName = new Date(calYear, calMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '32px auto', padding: '0 20px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4, margin: 0 }}>📅 Attendance History</h2>
+          <p style={{ color: '#888', fontSize: 14, margin: '4px 0 0' }}>Track your attendance with calendar & table views</p>
         </div>
-        {summary && (
-          <>
-            <div style={{ background: '#e8f5e9', borderRadius: 14, padding: 20, flex: 1, minWidth: 120, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>Present</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#2e7d32' }}>{summary.present}</div>
-            </div>
-            <div style={{ background: '#fce4ec', borderRadius: 14, padding: 20, flex: 1, minWidth: 120, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>Absent</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#e53935' }}>{summary.absent}</div>
-            </div>
-            <div style={{ background: '#fff3e0', borderRadius: 14, padding: 20, flex: 1, minWidth: 120, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>Late</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#ef6c00' }}>{summary.late}</div>
-            </div>
-            <div style={{ background: '#ede7f6', borderRadius: 14, padding: 20, flex: 1, minWidth: 120, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>Half-day</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#5e35b1' }}>{summary['half-day']}</div>
-            </div>
-          </>
-        )}
+        <div style={{ display: 'flex', gap: 4, background: '#f0f2f5', borderRadius: 10, padding: 3 }}>
+          <button onClick={() => setViewMode('calendar')}
+            style={{ ...viewBtnStyle, ...(viewMode === 'calendar' ? viewBtnActive : {}) }}>📅 Calendar</button>
+          <button onClick={() => setViewMode('table')}
+            style={{ ...viewBtnStyle, ...(viewMode === 'table' ? viewBtnActive : {}) }}>📋 Table</button>
+        </div>
       </div>
 
-      {/* Table */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-        {loading && <div style={{ textAlign: 'center', color: '#888', padding: 20 }}>Loading...</div>}
-        {error && <div style={{ color: '#e53935', textAlign: 'center', padding: 20 }}>{error}</div>}
-        {!loading && !error && (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f4f6f9' }}>
-                <th style={thStyle}>Date</th>
-                <th style={thStyle}>Check In</th>
-                <th style={thStyle}>Check Out</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Hours</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.length === 0 && (
-                <tr><td colSpan="5" style={{ textAlign: 'center', padding: 20, color: '#aaa' }}>No records found</td></tr>
-              )}
-              {history.map(rec => (
-                <tr key={rec._id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={tdStyle}>{rec.date ? new Date(rec.date).toLocaleDateString() : ''}</td>
-                  <td style={tdStyle}>{rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString() : '-'}</td>
-                  <td style={tdStyle}>{rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString() : '-'}</td>
-                  <td style={tdStyle}><StatusBadge status={rec.status} /></td>
-                  <td style={tdStyle}>{rec.totalHours != null ? rec.totalHours : '-'}</td>
-                </tr>
+      {/* Summary Cards */}
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
+        {[
+          { key: 'present', icon: '✅', label: 'Present', color: STATUS_COLORS.present },
+          { key: 'absent', icon: '❌', label: 'Absent', color: STATUS_COLORS.absent },
+          { key: 'late', icon: '⏰', label: 'Late', color: STATUS_COLORS.late },
+          { key: 'half-day', icon: '🌗', label: 'Half Day', color: STATUS_COLORS['half-day'] },
+        ].map(s => (
+          <div key={s.key} style={{
+            flex: 1, minWidth: 130, background: '#fff', borderRadius: 14, padding: '18px 16px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: `4px solid ${s.color.bg}`,
+            display: 'flex', alignItems: 'center', gap: 12
+          }}>
+            <div style={{ fontSize: 28 }}>{s.icon}</div>
+            <div>
+              <div style={{ fontSize: 11, color: '#888', fontWeight: 600, textTransform: 'uppercase' }}>{s.label}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: s.color.dark }}>{summary ? (summary[s.key] || 0) : '-'}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+        {Object.entries(STATUS_COLORS).map(([key, val]) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
+            <span style={{ width: 14, height: 14, borderRadius: 4, background: val.bg, display: 'inline-block' }}></span>
+            {val.label}
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e0e0e0', display: 'inline-block' }}></span>
+          No Record
+        </div>
+      </div>
+
+      {loading && <div style={{ textAlign: 'center', color: '#888', padding: 40 }}>Loading...</div>}
+      {error && <div style={{ color: '#e53935', textAlign: 'center', padding: 20 }}>{error}</div>}
+
+      {!loading && !error && viewMode === 'calendar' && (
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          {/* Calendar */}
+          <div style={{ flex: 2, minWidth: 340, background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+            {/* Month Navigation */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '16px 20px', background: 'linear-gradient(135deg, #1a73e8, #0d47a1)', color: '#fff'
+            }}>
+              <button onClick={() => navigateMonth(-1)} style={navBtnStyle}>◀</button>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{monthName}</div>
+              <button onClick={() => navigateMonth(1)} style={navBtnStyle}>▶</button>
+            </div>
+
+            {/* Day Headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f8f9fb' }}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                <div key={d} style={{ padding: '10px 0', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#888' }}>{d}</div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+
+            {/* Calendar Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, padding: 8 }}>
+              {/* Empty cells for first week offset */}
+              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                <div key={`e-${i}`} style={{ height: 58 }}></div>
+              ))}
+              {/* Day cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const rec = recordMap[dateStr];
+                const isToday = dateStr === todayStr;
+                const isSelected = dateStr === selectedDate;
+                const isPast = new Date(dateStr) < new Date(todayStr);
+                const isWeekend = new Date(calYear, calMonth - 1, day).getDay() === 0 || new Date(calYear, calMonth - 1, day).getDay() === 6;
+
+                let bgColor = '#f5f5f5';
+                let dotColor = null;
+                if (rec) {
+                  const sc = STATUS_COLORS[rec.status];
+                  bgColor = sc ? sc.bg : '#e0e0e0';
+                  dotColor = null;
+                } else if (isPast && !isWeekend) {
+                  bgColor = '#e0e0e0'; // no record, past weekday
+                }
+
+                return (
+                  <div key={day} onClick={() => setSelectedDate(dateStr)}
+                    style={{
+                      height: 58, borderRadius: 10, display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                      background: isSelected ? '#1a73e8' : bgColor,
+                      color: isSelected ? '#fff' : (rec ? '#fff' : '#555'),
+                      border: isToday ? '2.5px solid #1a73e8' : '2px solid transparent',
+                      transition: 'all 0.15s', position: 'relative',
+                      fontWeight: isToday ? 800 : 500,
+                    }}>
+                    <span style={{ fontSize: 16, fontWeight: 700 }}>{day}</span>
+                    {rec && !isSelected && (
+                      <span style={{ fontSize: 9, fontWeight: 700, marginTop: 2, textTransform: 'uppercase', opacity: 0.9 }}>
+                        {rec.status === 'half-day' ? 'HALF' : rec.status.slice(0, 4).toUpperCase()}
+                      </span>
+                    )}
+                    {isSelected && rec && (
+                      <span style={{ fontSize: 9, fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>
+                        {rec.status === 'half-day' ? 'HALF' : rec.status.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Detail Panel */}
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{
+              background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
+              padding: 24, minHeight: 300
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', marginTop: 0, marginBottom: 16 }}>
+                📋 Day Details
+              </h3>
+              {!selectedDate && (
+                <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>👆</div>
+                  Click on a date in the calendar to view details
+                </div>
+              )}
+              {selectedDate && !selectedRecord && (
+                <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#333', marginBottom: 8 }}>
+                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </div>
+                  <div style={{
+                    display: 'inline-block', background: '#fce4ec', color: '#e53935',
+                    padding: '6px 20px', borderRadius: 20, fontSize: 13, fontWeight: 700, marginTop: 8
+                  }}>
+                    No attendance record
+                  </div>
+                </div>
+              )}
+              {selectedDate && selectedRecord && (() => {
+                const rec = selectedRecord;
+                const sc = STATUS_COLORS[rec.status] || STATUS_COLORS.present;
+                return (
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#333', marginBottom: 16 }}>
+                      {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                    <div style={{
+                      display: 'inline-block', background: sc.bg, color: '#fff',
+                      padding: '6px 20px', borderRadius: 20, fontSize: 14, fontWeight: 700, marginBottom: 20, textTransform: 'capitalize'
+                    }}>
+                      {rec.status}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
+                      <DetailRow icon="🕐" label="Check In" value={rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString() : 'N/A'} />
+                      <DetailRow icon="🕕" label="Check Out" value={rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString() : 'N/A'} />
+                      <DetailRow icon="⏱️" label="Total Hours" value={rec.totalHours != null ? `${rec.totalHours} hrs` : 'N/A'} />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table View */}
+      {!loading && !error && viewMode === 'table' && (
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+          {/* Month picker inside table view */}
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#666' }}>Month:</label>
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+              style={{ padding: '6px 12px', border: '1.5px solid #ddd', borderRadius: 8, fontSize: 14 }} />
+          </div>
+          <div style={{ padding: '0 24px 24px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+              <thead>
+                <tr style={{ background: '#f4f6f9' }}>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Day</th>
+                  <th style={thStyle}>Check In</th>
+                  <th style={thStyle}>Check Out</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  const monthRecords = history.filter(rec => {
+                    if (!rec.date) return false;
+                    const d = new Date(rec.date);
+                    return d.getFullYear() === calYear && d.getMonth() + 1 === calMonth;
+                  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                  if (monthRecords.length === 0) {
+                    return <tr><td colSpan="6" style={{ textAlign: 'center', padding: 30, color: '#aaa' }}>No records for this month</td></tr>;
+                  }
+                  return monthRecords.map(rec => (
+                    <tr key={rec._id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={tdStyle}>{new Date(rec.date).toLocaleDateString()}</td>
+                      <td style={tdStyle}>{new Date(rec.date).toLocaleDateString('en-US', { weekday: 'short' })}</td>
+                      <td style={tdStyle}>{rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString() : '-'}</td>
+                      <td style={tdStyle}>{rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString() : '-'}</td>
+                      <td style={tdStyle}><StatusBadge status={rec.status} /></td>
+                      <td style={tdStyle}>{rec.totalHours != null ? rec.totalHours : '-'}</td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8f9fb', borderRadius: 10 }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>{label}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#333' }}>{value}</div>
       </div>
     </div>
   );
 }
 
+const navBtnStyle = { background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', borderRadius: 8, padding: '6px 12px', fontWeight: 700 };
+const viewBtnStyle = { border: 'none', background: 'transparent', padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 8, color: '#666' };
+const viewBtnActive = { background: '#fff', color: '#1a73e8', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' };
 const thStyle = { padding: '10px 12px', textAlign: 'left', fontSize: 13, fontWeight: 700, color: '#555' };
 const tdStyle = { padding: '10px 12px', fontSize: 14, color: '#333' };
 

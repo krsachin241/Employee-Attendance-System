@@ -38,7 +38,7 @@ function AllEmployeesAttendance() {
       if (status) params.append('status', status);
       if (department) params.append('department', department);
 
-      const res = await fetch(`/api/attendance/manager/all?${params.toString()}`, {
+      const res = await fetch(`/api/attendance/all?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

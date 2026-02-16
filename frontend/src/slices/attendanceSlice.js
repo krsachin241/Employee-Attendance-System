@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-export const fetchAttendanceHistory = createAsyncThunk('attendance/fetchHistory', async (userId) => {
+export const fetchAttendanceHistory = createAsyncThunk('attendance/fetchHistory', async () => {
   const token = localStorage.getItem('token');
-  const res = await fetch(`/api/attendance/history/${userId}`, {
+  const res = await fetch(`/api/attendance/my-history`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
@@ -10,9 +10,9 @@ export const fetchAttendanceHistory = createAsyncThunk('attendance/fetchHistory'
   return data;
 });
 
-export const fetchMonthlySummary = createAsyncThunk('attendance/fetchMonthlySummary', async ({ userId, month }) => {
+export const fetchMonthlySummary = createAsyncThunk('attendance/fetchMonthlySummary', async ({ month }) => {
   const token = localStorage.getItem('token');
-  const res = await fetch(`/api/attendance/monthly-summary/${userId}/${month}`, {
+  const res = await fetch(`/api/attendance/my-summary?month=${month}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();

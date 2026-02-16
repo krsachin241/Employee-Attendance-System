@@ -11,56 +11,76 @@ import TeamCalendar from './pages/TeamCalendar';
 import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import ManagerLayout from './components/ManagerLayout';
+import EmployeeLayout from './components/EmployeeLayout';
 
 function App() {
   return (
     <Router>
-      <Navbar />
-      <div style={{ minHeight: 'calc(100vh - 60px)', background: '#f4f6f9' }}>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
+      <Routes>
+        {/* Login (no nav) */}
+        <Route path="/" element={<Login />} />
+
+        {/* Employee routes with modern sidebar layout */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <EmployeeLayout>
               <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/mark-attendance" element={
-            <ProtectedRoute>
+            </EmployeeLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/mark-attendance" element={
+          <ProtectedRoute>
+            <EmployeeLayout>
               <MarkAttendance />
-            </ProtectedRoute>
-          } />
-          <Route path="/attendance-history" element={
-            <ProtectedRoute>
+            </EmployeeLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/attendance-history" element={
+          <ProtectedRoute>
+            <EmployeeLayout>
               <AttendanceHistory />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
+            </EmployeeLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <EmployeeLayout>
               <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/manager/dashboard" element={
-            <ProtectedRoute>
+            </EmployeeLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* Manager routes wrapped with enterprise sidebar layout */}
+        <Route path="/manager/dashboard" element={
+          <ProtectedRoute>
+            <ManagerLayout>
               <ManagerDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/manager/attendance" element={
-            <ProtectedRoute>
+            </ManagerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/manager/attendance" element={
+          <ProtectedRoute>
+            <ManagerLayout>
               <AllEmployeesAttendance />
-            </ProtectedRoute>
-          } />
-          <Route path="/manager/calendar" element={
-            <ProtectedRoute>
+            </ManagerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/manager/calendar" element={
+          <ProtectedRoute>
+            <ManagerLayout>
               <TeamCalendar />
-            </ProtectedRoute>
-          } />
-          <Route path="/manager/reports" element={
-            <ProtectedRoute>
+            </ManagerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/manager/reports" element={
+          <ProtectedRoute>
+            <ManagerLayout>
               <Reports />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </div>
+            </ManagerLayout>
+          </ProtectedRoute>
+        } />
+      </Routes>
     </Router>
   );
 }

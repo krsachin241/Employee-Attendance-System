@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-export const fetchDashboard = createAsyncThunk('dashboard/fetchDashboard', async (userId) => {
+export const fetchDashboard = createAsyncThunk('dashboard/fetchDashboard', async () => {
   const token = localStorage.getItem('token');
-  const res = await fetch(`/api/attendance/dashboard/employee/${userId}`, {
+  const res = await fetch(`/api/dashboard/employee`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();

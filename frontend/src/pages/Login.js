@@ -101,7 +101,15 @@ function Login() {
               </div>
               <div style={styles.inputGroup}>
                 <label style={styles.label}>Department</label>
-                <input style={styles.input} name="department" placeholder="Engineering" value={form.department} onChange={handleChange} />
+                <select style={styles.input} name="department" value={form.department} onChange={handleChange} required>
+                  <option value="">Select Department</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Operations">Operations</option>
+                </select>
               </div>
             </>
           )}

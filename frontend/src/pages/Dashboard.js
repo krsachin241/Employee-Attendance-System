@@ -19,7 +19,7 @@ function Dashboard() {
       setLoading(true); setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/attendance/dashboard/employee/${user.id}`, {
+        const res = await fetch(`/api/dashboard/employee`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

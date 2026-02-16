@@ -12,16 +12,12 @@ function MarkAttendance() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/attendance/dashboard/employee/${user.id}`, {
+      const res = await fetch(`/api/attendance/today`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      // Find today's record from recent attendance
-      const today = new Date();
-      const todayStr = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().slice(0, 10);
-      const rec = data.recentAttendance?.find(r => new Date(r.date).toISOString().slice(0, 10) === todayStr);
-      setTodayRecord(rec || null);
+      setTodayRecord(data.record || null);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };

@@ -16,7 +16,7 @@ function TeamCalendar() {
       setLoading(true); setError('');
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/attendance/manager/calendar/${month}`, {
+        const res = await fetch(`/api/attendance/calendar/${month}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
