@@ -10,6 +10,7 @@ import cors from 'cors';
 import { MONGO_URI } from './config.js';
 import authRoutes from './routes/auth.js';
 import attendanceRoutes from './routes/attendance.js';
+import dashboardRoutes from './routes/dashboard.js';
 import { authMiddleware, roleMiddleware } from './middleware/auth.js';
 
 const app = express();
@@ -22,6 +23,7 @@ mongoose.connect(MONGO_URI)
 
 app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 

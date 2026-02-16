@@ -50,10 +50,9 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 });
 
 // Get my attendance history
-router.get('/history/:userId', authMiddleware, async (req, res) => {
+router.get('/my-history', authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.params;
-    if (req.user.id !== userId) return res.status(403).json({ message: 'Forbidden' });
+    const userId = req.user.id;
     const history = await Attendance.find({ userId }).sort({ date: -1 });
     res.json(history);
   } catch (err) {
@@ -62,10 +61,11 @@ router.get('/history/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get monthly summary
-router.get('/monthly-summary/:userId/:month', authMiddleware, async (req, res) => {
+router.get('/my-summary', authMiddleware, async (req, res) => {
   try {
-    const { userId, month } = req.params;
-    if (req.user.id !== userId) return res.status(403).json({ message: 'Forbidden' });
+    const userId = req.user.id;
+    const month = req.query.month;
+    if (!month) return res.status(400).json({ message: 'month query param required (YYYY-MM)' });
     const [year, m] = month.split('-');
     const start = new Date(year, m - 1, 1);
     const end = new Date(year, m, 1);
@@ -78,11 +78,25 @@ router.get('/monthly-summary/:userId/:month', authMiddleware, async (req, res) =
   }
 });
 
-// Dashboard API
-router.get('/dashboard/employee/:userId', authMiddleware, async (req, res) => {
+// Get today's status
+router.get('/today', authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.params;
-    if (req.user.id !== userId) return res.status(403).json({ message: 'Forbidden' });
+    const userId = req.user.id;
+    const now = new Date();
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const record = await Attendance.findOne({ userId, date: todayDate });
+    if (!record) return res.json({ status: 'Not Checked In', record: null });
+    const status = record.checkOutTime ? 'Day Complete' : 'Checked In';
+    res.json({ status, record });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Dashboard API (uses token)
+const dashboardHandler = async (req, res) => {
+  try {
+    const userId = req.user.id;
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -105,93 +119,32 @@ router.get('/dashboard/employee/:userId', authMiddleware, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
-});
-
+};
+router.get('/dashboard/employee', authMiddleware, dashboardHandler);
+router.get('/dashboard/employee/:userId', authMiddleware, dashboardHandler);
 
 // ==================== MANAGER ROUTES ====================
 
 import { roleMiddleware } from '../middleware/auth.js';
 
-// Manager: Dashboard with team stats
-router.get('/manager/dashboard', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+// GET /api/attendance/all - All employees attendance (department-scoped)
+router.get('/all', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
   try {
-    const today = new Date();
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const managerDept = req.userDetails.department;
+    const { employeeId, startDate, endDate, status } = req.query;
 
-    const totalEmployees = await User.countDocuments({ role: 'employee' });
+    const deptEmployees = await User.find({ role: 'employee', department: managerDept });
+    const deptUserIds = deptEmployees.map(u => u._id);
+    const filter = { userId: { $in: deptUserIds } };
 
-    // Today's stats
-    const todayRecords = await Attendance.find({ date: todayDate });
-    const checkedInToday = todayRecords.length;
-    const lateToday = todayRecords.filter(r => r.status === 'late').length;
-    const absentToday = totalEmployees - checkedInToday;
-
-    // This month stats
-    const monthRecords = await Attendance.find({ date: { $gte: thisMonthStart, $lt: thisMonthEnd } });
-    let monthPresent = 0, monthLate = 0, monthAbsent = 0, monthHalfDay = 0, monthTotalHours = 0;
-    monthRecords.forEach(r => {
-      if (r.status === 'present') monthPresent++;
-      if (r.status === 'late') monthLate++;
-      if (r.status === 'absent') monthAbsent++;
-      if (r.status === 'half-day') monthHalfDay++;
-      if (r.totalHours) monthTotalHours += Number(r.totalHours);
-    });
-
-    // Department breakdown
-    const employees = await User.find({ role: 'employee' });
-    const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
-    const departmentStats = [];
-    for (const dept of departments) {
-      const deptUsers = employees.filter(e => e.department === dept);
-      const deptUserIds = deptUsers.map(u => u._id);
-      const deptToday = await Attendance.countDocuments({ userId: { $in: deptUserIds }, date: todayDate });
-      departmentStats.push({ department: dept, total: deptUsers.length, presentToday: deptToday, absentToday: deptUsers.length - deptToday });
-    }
-
-    // Recent team attendance (last 10 records)
-    const recentTeam = await Attendance.find().populate('userId', 'name employeeId department').sort({ date: -1 }).limit(10);
-
-    res.json({
-      totalEmployees, checkedInToday, lateToday, absentToday,
-      monthPresent, monthLate, monthAbsent, monthHalfDay, monthTotalHours,
-      departmentStats, recentTeam
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Manager: Get all attendance records with filters (employee, date, status)
-router.get('/manager/all', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
-  try {
-    const { employeeId, startDate, endDate, status, department } = req.query;
-    const filter = {};
-
-    // Filter by employee name/ID
     if (employeeId) {
-      const users = await User.find({
-        $or: [
-          { employeeId: { $regex: employeeId, $options: 'i' } },
-          { name: { $regex: employeeId, $options: 'i' } },
-        ]
-      });
-      filter.userId = { $in: users.map(u => u._id) };
+      const matchedUsers = deptEmployees.filter(u =>
+        u.employeeId.toLowerCase().includes(employeeId.toLowerCase()) ||
+        u.name.toLowerCase().includes(employeeId.toLowerCase())
+      );
+      filter.userId = { $in: matchedUsers.map(u => u._id) };
     }
 
-    // Filter by department
-    if (department) {
-      const deptUsers = await User.find({ department: { $regex: department, $options: 'i' } });
-      if (filter.userId) {
-        const existingIds = filter.userId.$in.map(id => id.toString());
-        filter.userId.$in = deptUsers.filter(u => existingIds.includes(u._id.toString())).map(u => u._id);
-      } else {
-        filter.userId = { $in: deptUsers.map(u => u._id) };
-      }
-    }
-
-    // Filter by date range
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) filter.date.$gte = new Date(startDate);
@@ -202,7 +155,6 @@ router.get('/manager/all', authMiddleware, roleMiddleware(['manager']), async (r
       }
     }
 
-    // Filter by status
     if (status) filter.status = status;
 
     const records = await Attendance.find(filter)
@@ -214,45 +166,20 @@ router.get('/manager/all', authMiddleware, roleMiddleware(['manager']), async (r
   }
 });
 
-// Manager: Team calendar data (attendance for a given month)
-router.get('/manager/calendar/:month', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+// GET /api/attendance/employee/:id - Specific employee attendance (department-scoped)
+router.get('/employee/:id', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
   try {
-    const { month } = req.params;
-    const [year, m] = month.split('-');
-    const start = new Date(year, m - 1, 1);
-    const end = new Date(year, m, 1);
+    const managerDept = req.userDetails.department;
+    const { id } = req.params;
 
-    const records = await Attendance.find({ date: { $gte: start, $lt: end } })
-      .populate('userId', 'name employeeId department');
+    const employee = await User.findById(id);
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    if (employee.department !== managerDept) {
+      return res.status(403).json({ message: 'Access denied: employee is not in your department' });
+    }
 
-    // Group by date
-    const calendarData = {};
-    records.forEach(r => {
-      const dateStr = new Date(r.date).toISOString().slice(0, 10);
-      if (!calendarData[dateStr]) calendarData[dateStr] = { present: 0, late: 0, absent: 0, 'half-day': 0, records: [] };
-      calendarData[dateStr][r.status]++;
-      calendarData[dateStr].records.push({
-        name: r.userId?.name, employeeId: r.userId?.employeeId,
-        department: r.userId?.department, status: r.status,
-        checkIn: r.checkInTime, checkOut: r.checkOutTime, totalHours: r.totalHours,
-      });
-    });
-
-    // Get total employees for absent calculation
-    const totalEmployees = await User.countDocuments({ role: 'employee' });
-
-    res.json({ calendarData, totalEmployees });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Manager: Export attendance as CSV
-router.get('/manager/export', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
-  try {
-    const { startDate, endDate, department, status } = req.query;
-    const filter = {};
-
+    const { startDate, endDate } = req.query;
+    const filter = { userId: id };
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) filter.date.$gte = new Date(startDate);
@@ -263,18 +190,133 @@ router.get('/manager/export', authMiddleware, roleMiddleware(['manager']), async
       }
     }
 
-    if (department) {
-      const deptUsers = await User.find({ department: { $regex: department, $options: 'i' } });
-      filter.userId = { $in: deptUsers.map(u => u._id) };
-    }
+    const records = await Attendance.find(filter).sort({ date: -1 });
+    res.json({
+      employee: { name: employee.name, email: employee.email, employeeId: employee.employeeId, department: employee.department },
+      records
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
+// GET /api/attendance/summary - Team summary (department-scoped)
+router.get('/summary', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+  try {
+    const managerDept = req.userDetails.department;
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
+    const employees = await User.find({ role: 'employee', department: managerDept });
+    const deptUserIds = employees.map(u => u._id);
+    const totalEmployees = employees.length;
+
+    const todayRecords = await Attendance.find({ date: todayDate, userId: { $in: deptUserIds } });
+    const presentToday = todayRecords.filter(r => r.status === 'present').length;
+    const lateToday = todayRecords.filter(r => r.status === 'late').length;
+    const halfDayToday = todayRecords.filter(r => r.status === 'half-day').length;
+    const absentToday = totalEmployees - todayRecords.length;
+
+    const monthRecords = await Attendance.find({ date: { $gte: thisMonthStart, $lt: thisMonthEnd }, userId: { $in: deptUserIds } });
+    let monthPresent = 0, monthLate = 0, monthAbsent = 0, monthHalfDay = 0, monthTotalHours = 0;
+    monthRecords.forEach(r => {
+      if (r.status === 'present') monthPresent++;
+      if (r.status === 'late') monthLate++;
+      if (r.status === 'absent') monthAbsent++;
+      if (r.status === 'half-day') monthHalfDay++;
+      if (r.totalHours) monthTotalHours += Number(r.totalHours);
+    });
+
+    const employeeSummaries = employees.map(emp => {
+      const empRecords = monthRecords.filter(r => r.userId.toString() === emp._id.toString());
+      const present = empRecords.filter(r => r.status === 'present').length;
+      const late = empRecords.filter(r => r.status === 'late').length;
+      const absent = empRecords.filter(r => r.status === 'absent').length;
+      const halfDay = empRecords.filter(r => r.status === 'half-day').length;
+      const hours = empRecords.reduce((sum, r) => sum + (Number(r.totalHours) || 0), 0);
+      return { name: emp.name, employeeId: emp.employeeId, email: emp.email, present, late, absent, halfDay, totalHours: hours.toFixed(2) };
+    });
+
+    res.json({
+      department: managerDept,
+      totalEmployees,
+      today: { presentToday, lateToday, halfDayToday, absentToday },
+      month: { monthPresent, monthLate, monthAbsent, monthHalfDay, monthTotalHours: monthTotalHours.toFixed(2) },
+      employeeSummaries
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/attendance/today-status - Who's present today (department-scoped)
+router.get('/today-status', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+  try {
+    const managerDept = req.userDetails.department;
+    const now = new Date();
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const employees = await User.find({ role: 'employee', department: managerDept });
+    const deptUserIds = employees.map(u => u._id);
+
+    const todayRecords = await Attendance.find({ date: todayDate, userId: { $in: deptUserIds } })
+      .populate('userId', 'name employeeId department email');
+
+    const checkedInIds = todayRecords.map(r => r.userId?._id.toString());
+    const presentEmployees = todayRecords.map(r => ({
+      name: r.userId?.name,
+      employeeId: r.userId?.employeeId,
+      email: r.userId?.email,
+      status: r.status,
+      checkInTime: r.checkInTime,
+      checkOutTime: r.checkOutTime,
+      totalHours: r.totalHours
+    }));
+
+    const absentEmployees = employees
+      .filter(e => !checkedInIds.includes(e._id.toString()))
+      .map(e => ({ name: e.name, employeeId: e.employeeId, email: e.email, status: 'absent' }));
+
+    res.json({
+      department: managerDept,
+      totalEmployees: employees.length,
+      presentCount: todayRecords.length,
+      absentCount: employees.length - todayRecords.length,
+      presentEmployees,
+      absentEmployees
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/attendance/export - Export CSV (department-scoped)
+router.get('/export', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+  try {
+    const managerDept = req.userDetails.department;
+    const { startDate, endDate, status } = req.query;
+
+    const deptEmployees = await User.find({ role: 'employee', department: managerDept });
+    const deptUserIds = deptEmployees.map(u => u._id);
+    const filter = { userId: { $in: deptUserIds } };
+
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) filter.date.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setDate(end.getDate() + 1);
+        filter.date.$lt = end;
+      }
+    }
     if (status) filter.status = status;
 
     const records = await Attendance.find(filter)
       .populate('userId', 'name email employeeId department')
       .sort({ date: -1 });
 
-    // Build CSV
     const header = 'Employee ID,Name,Email,Department,Date,Check In,Check Out,Status,Total Hours\n';
     const rows = records.map(r => {
       const u = r.userId || {};
@@ -295,24 +337,66 @@ router.get('/manager/export', authMiddleware, roleMiddleware(['manager']), async
   }
 });
 
-// Manager: Get all employees list
-router.get('/manager/employees', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+// GET /api/attendance/calendar/:month - Team calendar (department-scoped)
+router.get('/calendar/:month', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
   try {
-    const employees = await User.find({ role: 'employee' }).select('name email employeeId department');
+    const managerDept = req.userDetails.department;
+    const { month } = req.params;
+    const [year, m] = month.split('-');
+    const start = new Date(year, m - 1, 1);
+    const end = new Date(year, m, 1);
+
+    const deptEmployees = await User.find({ role: 'employee', department: managerDept });
+    const deptUserIds = deptEmployees.map(u => u._id);
+
+    const records = await Attendance.find({ date: { $gte: start, $lt: end }, userId: { $in: deptUserIds } })
+      .populate('userId', 'name employeeId department');
+
+    const calendarData = {};
+    records.forEach(r => {
+      const dateStr = new Date(r.date).toISOString().slice(0, 10);
+      if (!calendarData[dateStr]) calendarData[dateStr] = { present: 0, late: 0, absent: 0, 'half-day': 0, records: [] };
+      calendarData[dateStr][r.status]++;
+      calendarData[dateStr].records.push({
+        name: r.userId?.name, employeeId: r.userId?.employeeId,
+        department: r.userId?.department, status: r.status,
+        checkIn: r.checkInTime, checkOut: r.checkOutTime, totalHours: r.totalHours,
+      });
+    });
+
+    const totalEmployees = deptEmployees.length;
+    res.json({ calendarData, totalEmployees });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/attendance/employees - Department employees list
+router.get('/employees', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+  try {
+    const managerDept = req.userDetails.department;
+    const employees = await User.find({ role: 'employee', department: managerDept }).select('name email employeeId department');
     res.json(employees);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Manager: Update an employee's attendance record
-router.put('/manager/update/:attendanceId', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
+// PUT /api/attendance/update/:attendanceId - Update attendance (department-scoped)
+router.put('/update/:attendanceId', authMiddleware, roleMiddleware(['manager']), async (req, res) => {
   try {
+    const managerDept = req.userDetails.department;
     const { attendanceId } = req.params;
-    const update = req.body;
-    const attendance = await Attendance.findByIdAndUpdate(attendanceId, update, { new: true });
+
+    const attendance = await Attendance.findById(attendanceId).populate('userId', 'department');
     if (!attendance) return res.status(404).json({ message: 'Attendance not found' });
-    res.json({ message: 'Attendance updated', attendance });
+    if (attendance.userId?.department !== managerDept) {
+      return res.status(403).json({ message: 'Access denied: employee is not in your department' });
+    }
+
+    const update = req.body;
+    const updated = await Attendance.findByIdAndUpdate(attendanceId, update, { new: true });
+    res.json({ message: 'Attendance updated', attendance: updated });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
