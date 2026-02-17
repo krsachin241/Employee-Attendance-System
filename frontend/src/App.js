@@ -15,6 +15,11 @@ import ManagerLayout from './components/ManagerLayout';
 import EmployeeLayout from './components/EmployeeLayout';
 
 function App() {
+  React.useEffect(() => {
+    document.body.style.background = '#f5f8fd'; // match dashboard bg
+    document.body.style.minHeight = '100vh';
+    document.body.style.margin = '0';
+  }, []);
   return (
     <Router>
       <Routes>

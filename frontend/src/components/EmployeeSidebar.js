@@ -10,7 +10,7 @@ const menuItems = [
   { path: '/profile', label: 'Profile', icon: '👤' },
 ];
 
-export default function EmployeeSidebar() {
+export default function EmployeeSidebar({ mobileOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -21,20 +21,27 @@ export default function EmployeeSidebar() {
     navigate('/');
   };
 
+  // Responsive sidebar: hidden on mobile unless open, shadow removed on mobile
+  // Sidebar only shows when mobileOpen is true
+  if (!mobileOpen) return null;
   return (
-    <aside style={{
-      width: 260,
-      minHeight: '100vh',
-      background: '#1A2233',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'fixed',
-      top: 0, left: 0, bottom: 0,
-      zIndex: 999,
-      overflow: 'hidden',
-      boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
-      borderRight: '1.5px solid #232B3E',
-    }}>
+    <aside
+      className="employee-sidebar"
+      style={{
+        width: 260,
+        minHeight: '100vh',
+        background: '#1A2233',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'fixed',
+        top: 0, left: 0, bottom: 0,
+        zIndex: 999,
+        overflow: 'hidden',
+        boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
+        borderRight: '1.5px solid #232B3E',
+        transition: 'box-shadow 0.2s, left 0.2s',
+      }}
+    >
       {/* Logo */}
       <div style={{
         padding: '20px 24px',
@@ -52,8 +59,24 @@ export default function EmployeeSidebar() {
         </div>
         <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: 0.5 }}>AttendEase</div>
-          <div style={{ fontSize: 12, color: '#B3C6E0', fontWeight: 500 }}>Employee Dashboard</div>
         </div>
+        {/* Mobile close button */}
+        <button
+          onClick={onClose}
+          style={{
+            display: 'none',
+            marginLeft: 'auto',
+            background: 'none',
+            border: 'none',
+            color: '#fff',
+            fontSize: 28,
+            cursor: 'pointer',
+          }}
+          className="sidebar-close-btn"
+          aria-label="Close sidebar"
+        >
+          ×
+        </button>
       </div>
 
       {/* Navigation Items */}
@@ -65,6 +88,9 @@ export default function EmployeeSidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => {
+                if (onClose) onClose();
+              }}
               onMouseEnter={() => setHoveredItem(item.path)}
               onMouseLeave={() => setHoveredItem(null)}
               style={{
@@ -130,6 +156,30 @@ export default function EmployeeSidebar() {
           </span>
         </button>
       </div>
+      {/* Responsive styles for sidebar */}
+      <style>{`
+        @media (max-width: 900px) {
+          .employee-sidebar {
+            width: 220px !important;
+          }
+        }
+        @media (max-width: 700px) {
+          .employee-sidebar {
+            left: ${mobileOpen ? '0' : '-260px'} !important;
+            width: 80vw !important;
+            min-width: 0 !important;
+            max-width: 320px !important;
+            box-shadow: none !important;
+            border-right: 1px solid #232B3E !important;
+            transition: left 0.2s;
+            background: #1A2233 !important;
+            z-index: 1200 !important;
+          }
+          .sidebar-close-btn {
+            display: block !important;
+          }
+        }
+      `}</style>
     </aside>
   );
 }

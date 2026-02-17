@@ -58,7 +58,7 @@ function TeamCalendar() {
   const selectedData = selectedDate ? calendarData[getDateStr(selectedDate)] : null;
 
   return (
-    <div style={{ maxWidth: 1000, margin: '32px auto', padding: '0 20px' }}>
+    <div className="team-calendar-main" style={{ maxWidth: 1000, margin: '32px auto', padding: '0 20px' }}>
       <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>Team Calendar View</h2>
       <p style={{ color: '#888', marginBottom: 24, fontSize: 15 }}>Visual team attendance for the month</p>
 
@@ -80,9 +80,9 @@ function TeamCalendar() {
       {error && <div style={{ color: '#e53935', textAlign: 'center', padding: 20 }}>{error}</div>}
 
       {!loading && !error && (
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+        <div className="team-calendar-content" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {/* Calendar Grid */}
-          <div style={{ flex: 2, minWidth: 340, background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div className="team-calendar-grid" style={{ flex: 2, minWidth: 340, background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             {/* Day Headers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
@@ -137,7 +137,7 @@ function TeamCalendar() {
           </div>
 
           {/* Day Detail Panel */}
-          <div style={{ flex: 1, minWidth: 280, background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxHeight: 500, overflowY: 'auto' }}>
+          <div className="team-calendar-detail" style={{ flex: 1, minWidth: 280, background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', maxHeight: 500, overflowY: 'auto' }}>
             {!selectedDate ? (
               <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0' }}>
                 <div style={{ fontSize: 40, marginBottom: 8 }}>📅</div>
@@ -185,6 +185,43 @@ function TeamCalendar() {
           </div>
         </div>
       )}
+    {/* Responsive styles */}
+    <style>{`
+      @media (max-width: 900px) {
+        .team-calendar-main {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+        }
+        .team-calendar-content {
+          flex-direction: column !important;
+          gap: 12px !important;
+        }
+        .team-calendar-grid, .team-calendar-detail {
+          width: 100% !important;
+          min-width: 0 !important;
+          border-radius: 10px !important;
+          box-shadow: none !important;
+        }
+      }
+      @media (max-width: 600px) {
+        .team-calendar-main {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        .team-calendar-content {
+          flex-direction: column !important;
+          gap: 8px !important;
+        }
+        .team-calendar-grid, .team-calendar-detail {
+          width: 100% !important;
+          min-width: 0 !important;
+          border-radius: 8px !important;
+          box-shadow: none !important;
+          padding-left: 6px !important;
+          padding-right: 6px !important;
+        }
+      }
+    `}</style>
     </div>
   );
 }

@@ -185,7 +185,7 @@ function Reports() {
   };
 
   return (
-    <div style={{ maxWidth: 1100, margin: '32px auto', padding: '0 20px' }}>
+    <div className="manager-reports-main" style={{ maxWidth: 1100, margin: '32px auto', padding: '0 20px' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4, margin: 0 }}>📊 Reports & Export</h2>
@@ -193,7 +193,7 @@ function Reports() {
       </div>
 
       {/* Quick Date Presets */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="reports-date-presets" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
           { key: 'today', label: 'Today' },
           { key: 'week', label: 'This Week' },
@@ -213,8 +213,8 @@ function Reports() {
       </div>
 
       {/* Filters */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <div className="reports-filters" style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 24 }}>
+        <div className="reports-filters-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, minWidth: 140 }}>
             <label style={filterLabel}>📅 From Date</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={filterInput} />
@@ -273,7 +273,7 @@ function Reports() {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
+      <div className="reports-summary-cards" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
         {[
           { label: 'Total Records', value: records.length, icon: '📄', bg: '#e3f0ff', color: '#1a73e8' },
           { label: 'Present', value: summary.present, icon: '✅', bg: '#e8f5e9', color: '#2e7d32' },
@@ -325,7 +325,7 @@ function Reports() {
       )}
 
       {/* Data Table */}
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+      <div className="reports-table-container" style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
         <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>📋 Report Data</h3>
           <span style={{ fontSize: 12, color: '#888' }}>Click column headers to sort</span>
@@ -336,7 +336,7 @@ function Reports() {
 
         {!loading && !error && (
           <div style={{ overflowX: 'auto', padding: '0 0 16px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
+            <table className="reports-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
               <thead>
                 <tr style={{ background: '#f4f6f9' }}>
                   <th style={{ ...thStyle, cursor: 'pointer' }} onClick={() => handleSort('name')}>
@@ -407,6 +407,92 @@ function Reports() {
           </div>
         )}
       </div>
+    {/* Responsive styles */}
+    <style>{`
+      @media (max-width: 1100px) {
+        .manager-reports-main {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+        }
+      }
+      @media (max-width: 900px) {
+        .manager-reports-main {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        .reports-summary-cards {
+          flex-direction: column !important;
+          gap: 8px !important;
+        }
+        .reports-summary-cards > div {
+          min-width: 0 !important;
+          width: 100% !important;
+          border-radius: 10px !important;
+          box-shadow: none !important;
+        }
+        .reports-filters-row {
+          flex-direction: column !important;
+          gap: 8px !important;
+        }
+        .reports-filters {
+          padding: 10px 4px !important;
+        }
+        .reports-table-container {
+          border-radius: 10px !important;
+          box-shadow: none !important;
+        }
+        .reports-table {
+          min-width: 500px !important;
+        }
+      }
+      @media (max-width: 700px) {
+        .manager-reports-main {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        .reports-summary-cards {
+          flex-direction: column !important;
+          gap: 6px !important;
+        }
+        .reports-summary-cards > div {
+          min-width: 0 !important;
+          width: 100% !important;
+          border-radius: 8px !important;
+          box-shadow: none !important;
+          padding-left: 6px !important;
+          padding-right: 6px !important;
+        }
+        .reports-filters-row {
+          flex-direction: column !important;
+          gap: 6px !important;
+        }
+        .reports-filters {
+          padding: 6px 2px !important;
+        }
+        .reports-table-container {
+          border-radius: 8px !important;
+          box-shadow: none !important;
+        }
+        .reports-table {
+          min-width: 400px !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .manager-reports-main {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        .reports-summary-cards > div {
+          border-radius: 6px !important;
+          box-shadow: none !important;
+          padding-left: 2px !important;
+          padding-right: 2px !important;
+        }
+        .reports-table {
+          min-width: 320px !important;
+        }
+      }
+    `}</style>
     </div>
   );
 }

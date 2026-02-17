@@ -11,7 +11,7 @@ const menuItems = [
   { path: '/profile', label: 'Profile', icon: '👤' },
 ];
 
-export default function ManagerSidebar() {
+export default function ManagerSidebar({ onNavigate }) {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -20,6 +20,15 @@ export default function ManagerSidebar() {
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
+    if (onNavigate) onNavigate();
+  };
+
+  // Hide sidebar after navigation
+  const handleNav = (path) => {
+    navigate(path);
+    if (onNavigate) onNavigate();
+    // Custom event for layout to listen
+    window.dispatchEvent(new Event('manager-nav'));
   };
 
   return (
@@ -51,20 +60,10 @@ export default function ManagerSidebar() {
         }}>
           📋
         </div>
-        <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: 0.5 }}>AttendEase</div>
-          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>HR Management</div>
-        </div>
+          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: 0.5 }}>AttendEase</div>
+          </div>
       </div>
-
-      {/* Menu Label */}
-      {/* <div style={{
-        padding: '18px 24px 8px',
-        fontSize: 10, fontWeight: 700, color: '#475569',
-        letterSpacing: 1.5, textTransform: 'uppercase',
-      }}>
-        Main Menu
-      </div> */}
 
       {/* Navigation Items */}
       <nav style={{ flex: 1, padding: '4px 12px', overflowY: 'auto' }}>
@@ -72,9 +71,9 @@ export default function ManagerSidebar() {
           const isActive = location.pathname === item.path;
           const isHovered = hoveredItem === item.path;
           return (
-            <Link
+            <div
               key={item.path}
-              to={item.path}
+              onClick={() => handleNav(item.path)}
               onMouseEnter={() => setHoveredItem(item.path)}
               onMouseLeave={() => setHoveredItem(null)}
               style={{
@@ -89,6 +88,7 @@ export default function ManagerSidebar() {
                   : isHovered ? 'rgba(255,255,255,0.05)' : 'transparent',
                 borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
                 position: 'relative',
+                cursor: 'pointer',
               }}
             >
               <span style={{
@@ -111,7 +111,7 @@ export default function ManagerSidebar() {
                   borderRadius: '50%', background: '#3B82F6',
                 }} />
               )}
-            </Link>
+            </div>
           );
         })}
       </nav>

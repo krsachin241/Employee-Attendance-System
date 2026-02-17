@@ -61,13 +61,13 @@ function AllEmployeesAttendance() {
   };
 
   return (
-    <div style={{ maxWidth: 1050, margin: '32px auto', padding: '0 20px' }}>
+    <div className="all-employees-attendance-main" style={{ maxWidth: 1050, margin: '32px auto', padding: '0 20px' }}>
       <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>All Employees Attendance</h2>
       <p style={{ color: '#888', marginBottom: 24, fontSize: 15 }}>View & filter attendance records for all team members</p>
 
       {/* Filters */}
-      <form onSubmit={handleFilter} style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <form onSubmit={handleFilter} className="all-employees-attendance-filters" style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 24 }}>
+        <div className="all-employees-attendance-filters-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, minWidth: 150 }}>
             <label style={filterLabel}>Employee (Name/ID)</label>
             <input value={employeeId} onChange={e => setEmployeeId(e.target.value)} placeholder="EMP001 or John"
@@ -118,11 +118,11 @@ function AllEmployeesAttendance() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
+      <div className="all-employees-attendance-table-container" style={{ background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
         {loading && <div style={{ textAlign: 'center', color: '#888', padding: 20 }}>Loading...</div>}
         {error && <div style={{ color: '#e53935', textAlign: 'center', padding: 20 }}>{error}</div>}
         {!loading && !error && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+          <table className="all-employees-attendance-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead>
               <tr style={{ background: '#f4f6f9' }}>
                 <th style={thStyle}>Employee</th>
@@ -158,6 +158,49 @@ function AllEmployeesAttendance() {
           </table>
         )}
       </div>
+    {/* Responsive styles */}
+    <style>{`
+      @media (max-width: 900px) {
+        .all-employees-attendance-main {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+        }
+        .all-employees-attendance-filters-row {
+          flex-direction: column !important;
+          gap: 8px !important;
+        }
+        .all-employees-attendance-filters {
+          padding: 10px 4px !important;
+        }
+        .all-employees-attendance-table-container {
+          border-radius: 10px !important;
+          box-shadow: none !important;
+        }
+        .all-employees-attendance-table {
+          min-width: 500px !important;
+        }
+      }
+      @media (max-width: 600px) {
+        .all-employees-attendance-main {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        .all-employees-attendance-filters-row {
+          flex-direction: column !important;
+          gap: 6px !important;
+        }
+        .all-employees-attendance-filters {
+          padding: 6px 2px !important;
+        }
+        .all-employees-attendance-table-container {
+          border-radius: 8px !important;
+          box-shadow: none !important;
+        }
+        .all-employees-attendance-table {
+          min-width: 320px !important;
+        }
+      }
+    `}</style>
     </div>
   );
 }

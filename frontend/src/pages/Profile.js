@@ -36,39 +36,141 @@ function Profile() {
   ];
 
   return (
-    <div style={{ maxWidth: 540, margin: '40px auto', padding: '0 20px' }}>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>My Profile</h2>
-      <p style={{ color: '#888', marginBottom: 28, fontSize: 15 }}>Your account details</p>
+    <div
+      className="profile-container"
+      style={{
+        maxWidth: 540,
+        margin: '40px auto',
+        padding: '0 8px',
+        width: '100%',
+        boxSizing: 'border-box',
+        background: 'none',
+        boxShadow: 'none',
+      }}
+    >
+      <h2
+        style={{
+          fontSize: 26,
+          fontWeight: 800,
+          color: '#1a1a2e',
+          marginBottom: 4,
+          textAlign: 'left',
+        }}
+      >
+        
+      </h2>
+      <p
+        style={{
+          color: '#888',
+          marginBottom: 28,
+          fontSize: 15,
+          textAlign: 'left',
+        }}
+      >
+        
+      </p>
 
-      {/* Avatar */}
-      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-        <div style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', padding: '32px 0', textAlign: 'center' }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.25)',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 8
-          }}>
-            {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{profile.name}</div>
-          <div style={{
-            display: 'inline-block', marginTop: 6, padding: '3px 14px', borderRadius: 20,
-            background: 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, fontWeight: 600, textTransform: 'capitalize'
-          }}>
-            {profile.role}
-          </div>
+      {/* Avatar and Details, flat layout */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: '#e3e8f0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 36,
+            fontWeight: 800,
+            color: '#4a4a4a',
+            marginBottom: 8,
+          }}
+        >
+          {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
         </div>
-
-        {/* Details */}
-        <div style={{ padding: '24px 28px' }}>
-          {fields.map((f, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: i < fields.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-              <span style={{ fontSize: 14, color: '#888', fontWeight: 600 }}>{f.label}</span>
-              <span style={{ fontSize: 14, color: '#333', fontWeight: 600, textTransform: f.label === 'Role' ? 'capitalize' : 'none' }}>{f.value}</span>
-            </div>
-          ))}
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#222', wordBreak: 'break-word', marginTop: 4 }}>{profile.name}</div>
+        <div
+          style={{
+            display: 'inline-block',
+            marginTop: 6,
+            padding: '3px 14px',
+            borderRadius: 20,
+            background: '#f0f0f0',
+            color: '#444',
+            fontSize: 12,
+            fontWeight: 600,
+            textTransform: 'capitalize',
+            wordBreak: 'break-word',
+          }}
+        >
+          {profile.role}
         </div>
       </div>
+      <div className="profile-details" style={{ width: '100%', boxSizing: 'border-box', padding: 0, background: 'none', boxShadow: 'none' }}>
+        {fields.map((f, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              padding: '12px 0',
+              borderBottom: i < fields.length - 1 ? '1px solid #f0f0f0' : 'none',
+              flexWrap: 'wrap',
+              gap: 8,
+              width: '100%',
+              background: 'none',
+              boxShadow: 'none',
+            }}
+          >
+            <span style={{ fontSize: 14, color: '#888', fontWeight: 600, minWidth: 100 }}>{f.label}</span>
+            <span
+              style={{
+                fontSize: 14,
+                color: '#333',
+                fontWeight: 600,
+                textTransform: f.label === 'Role' ? 'capitalize' : 'none',
+                wordBreak: 'break-word',
+                textAlign: 'right',
+                flex: 1,
+                maxWidth: 180,
+              }}
+            >
+              {f.value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Responsive styles */}
+      <style>{`
+        @media (max-width: 700px) {
+          .profile-container {
+            margin: 18px 0 0 0 !important;
+            padding: 0 4px !important;
+          }
+          .profile-details {
+            padding: 10px 4px !important;
+          }
+          .profile-details > div {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 4px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .profile-details {
+            padding: 6px 2px !important;
+          }
+          .profile-details > div {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

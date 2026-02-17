@@ -94,9 +94,20 @@ function AttendanceHistory() {
   const monthName = new Date(calYear, calMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div style={{ maxWidth: 1000, margin: '32px auto', padding: '0 20px' }}>
+    <div style={{
+      minHeight: 'calc(100vh - 64px)',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      maxWidth: 1000,
+      margin: '0 auto',
+      padding: '0 8px',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, width: '100%', maxWidth: 900 }}>
         <div>
           <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e', marginBottom: 4, margin: 0 }}>📅 Attendance History</h2>
           <p style={{ color: '#888', fontSize: 14, margin: '4px 0 0' }}>Track your attendance with calendar & table views</p>
@@ -110,7 +121,16 @@ function AttendanceHistory() {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 24 }}>
+      <div style={{
+        display: 'flex',
+        gap: 14,
+        flexWrap: 'wrap',
+        marginBottom: 24,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: '100%',
+        maxWidth: 900,
+      }}>
         {[
           { key: 'present', icon: '✅', label: 'Present', color: STATUS_COLORS.present },
           { key: 'absent', icon: '❌', label: 'Absent', color: STATUS_COLORS.absent },
@@ -118,9 +138,16 @@ function AttendanceHistory() {
           { key: 'half-day', icon: '🌗', label: 'Half Day', color: STATUS_COLORS['half-day'] },
         ].map(s => (
           <div key={s.key} style={{
-            flex: 1, minWidth: 130, background: '#fff', borderRadius: 14, padding: '18px 16px',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: `4px solid ${s.color.bg}`,
-            display: 'flex', alignItems: 'center', gap: 12
+            flex: 1,
+            minWidth: 130,
+            background: '#fff',
+            borderRadius: 14,
+            padding: '18px 16px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            borderLeft: `4px solid ${s.color.bg}`,
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginBottom: 8,
+            maxWidth: '100%',
           }}>
             <div style={{ fontSize: 28 }}>{s.icon}</div>
             <div>
@@ -132,7 +159,7 @@ function AttendanceHistory() {
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap', flexDirection: 'row', justifyContent: 'center', width: '100%', maxWidth: 900 }}>
         {Object.entries(STATUS_COLORS).map(([key, val]) => (
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
             <span style={{ width: 14, height: 14, borderRadius: 4, background: val.bg, display: 'inline-block' }}></span>
@@ -149,13 +176,32 @@ function AttendanceHistory() {
       {error && <div style={{ color: '#e53935', textAlign: 'center', padding: 20 }}>{error}</div>}
 
       {!loading && !error && viewMode === 'calendar' && (
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex',
+          gap: 20,
+          flexWrap: 'wrap',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          justifyContent: 'center',
+          width: '100%',
+          maxWidth: 900,
+        }}>
           {/* Calendar */}
-          <div style={{ flex: 2, minWidth: 340, background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+          <div style={{
+            flex: 2,
+            minWidth: 240,
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: 600,
+          }}>
             {/* Month Navigation */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '16px 20px', background: 'linear-gradient(135deg, #1a73e8, #0d47a1)', color: '#fff'
+              padding: '16px 20px', background: '#f5f8fd', color: '#232B3E',
+              borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottom: '1.5px solid #e0e0e0',
             }}>
               <button onClick={() => navigateMonth(-1)} style={navBtnStyle}>◀</button>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{monthName}</div>
@@ -224,10 +270,21 @@ function AttendanceHistory() {
           </div>
 
           {/* Detail Panel */}
-          <div style={{ flex: 1, minWidth: 260 }}>
+          <div style={{
+            flex: 1,
+            minWidth: 180,
+            width: '100%',
+            maxWidth: 400,
+            marginTop: 12,
+          }}>
             <div style={{
-              background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
-              padding: 24, minHeight: 300
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
+              padding: 16,
+              minHeight: 220,
+              width: '100%',
+              boxSizing: 'border-box',
             }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', marginTop: 0, marginBottom: 16 }}>
                 📋 Day Details
@@ -280,15 +337,15 @@ function AttendanceHistory() {
 
       {/* Table View */}
       {!loading && !error && viewMode === 'table' && (
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', width: '100%', maxWidth: 900, overflowX: 'auto', margin: '0 auto' }}>
           {/* Month picker inside table view */}
           <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: '#666' }}>Month:</label>
             <input type="month" value={month} onChange={e => setMonth(e.target.value)}
               style={{ padding: '6px 12px', border: '1.5px solid #ddd', borderRadius: 8, fontSize: 14 }} />
           </div>
-          <div style={{ padding: '0 24px 24px', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+          <div style={{ padding: '0 8px 16px', overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12, minWidth: 600 }}>
               <thead>
                 <tr style={{ background: '#f4f6f9' }}>
                   <th style={thStyle}>Date</th>
@@ -299,29 +356,44 @@ function AttendanceHistory() {
                   <th style={thStyle}>Hours</th>
                 </tr>
               </thead>
-              <tbody>
-                {(() => {
-                  const monthRecords = history.filter(rec => {
-                    if (!rec.date) return false;
-                    const d = new Date(rec.date);
-                    return d.getFullYear() === calYear && d.getMonth() + 1 === calMonth;
-                  }).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                  if (monthRecords.length === 0) {
-                    return <tr><td colSpan="6" style={{ textAlign: 'center', padding: 30, color: '#aaa' }}>No records for this month</td></tr>;
+              <style>{`
+                @media (max-width: 900px) {
+                  .attendance-history-main {
+                    padding-left: 8px !important;
+                    padding-right: 8px !important;
                   }
-                  return monthRecords.map(rec => (
-                    <tr key={rec._id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={tdStyle}>{new Date(rec.date).toLocaleDateString()}</td>
-                      <td style={tdStyle}>{new Date(rec.date).toLocaleDateString('en-US', { weekday: 'short' })}</td>
-                      <td style={tdStyle}>{rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString() : '-'}</td>
-                      <td style={tdStyle}>{rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString() : '-'}</td>
-                      <td style={tdStyle}><StatusBadge status={rec.status} /></td>
-                      <td style={tdStyle}>{rec.totalHours != null ? rec.totalHours : '-'}</td>
-                    </tr>
-                  ));
-                })()}
-              </tbody>
+                }
+                @media (max-width: 700px) {
+                  .attendance-history-main {
+                    padding-left: 4px !important;
+                    padding-right: 4px !important;
+                  }
+                  .attendance-history-cards {
+                    flex-direction: column !important;
+                    gap: 8px !important;
+                  }
+                  .attendance-history-calendar {
+                    min-width: 0 !important;
+                    max-width: 100vw !important;
+                    box-shadow: none !important;
+                  }
+                  .attendance-history-detail {
+                    min-width: 0 !important;
+                    max-width: 100vw !important;
+                    margin-top: 8px !important;
+                    box-shadow: none !important;
+                  }
+                  .attendance-history-table {
+                    min-width: 0 !important;
+                    max-width: 100vw !important;
+                    box-shadow: none !important;
+                    overflow-x: auto !important;
+                  }
+                  .attendance-history-table table {
+                    min-width: 400px !important;
+                  }
+                }
+              `}</style>
             </table>
           </div>
         </div>

@@ -138,9 +138,9 @@ function ManagerDashboard() {
   const absentToday = stats?.absentToday || 0;
 
   return (
-    <div style={{ display: 'flex', gap: 24, minHeight: 'calc(100vh - 120px)' }}>
+    <div className="manager-dashboard-main" style={{ display: 'flex', gap: 24, minHeight: 'calc(100vh - 120px)', flexWrap: 'nowrap', justifyContent: 'flex-start' }}>
       {/* ═══ LEFT MAIN CONTENT ═══ */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="manager-dashboard-content" style={{ flex: 1, minWidth: 0 }}>
 
         {/* KPI Cards Row */}
         <div style={{
@@ -426,160 +426,116 @@ function ManagerDashboard() {
         </div>
       </div>
 
-      {/* ═══ RIGHT SIDEBAR PANEL ═══ */}
-      <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-        {/* Mini Calendar */}
-        <div style={{
-          background: '#fff', borderRadius: 16, padding: 20,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
-          border: '1px solid #F1F5F9',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{
-              width: 28, height: 28, borderRadius: 8, background: '#EFF6FF',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-            }}>📅</span>
-            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Calendar</h4>
-          </div>
-          <MiniCalendar />
-        </div>
-
-        {/* Top Performing Employees */}
-        <div style={{
-          background: '#fff', borderRadius: 16, padding: 20,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
-          border: '1px solid #F1F5F9',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{
-              width: 28, height: 28, borderRadius: 8, background: '#FEF3C7',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-            }}>🏆</span>
-            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Top Performers</h4>
-          </div>
-          {/* Use recentTeam data (show top employees by hours) */}
-          {(() => {
-            const topEmployees = (stats?.recentTeam || [])
-              .filter(r => r.totalHours != null && r.totalHours > 0)
-              .sort((a, b) => (b.totalHours || 0) - (a.totalHours || 0))
-              .slice(0, 5);
-
-            if (topEmployees.length === 0) {
-              return <div style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, padding: '16px 0' }}>No data yet</div>;
-            }
-
-            return topEmployees.map((emp, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
-                borderBottom: i < topEmployees.length - 1 ? '1px solid #F1F5F9' : 'none',
-              }}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: '50%',
-                  background: i === 0 ? '#FEF3C7' : i === 1 ? '#F1F5F9' : '#FED7AA',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 800,
-                  color: i === 0 ? '#92400E' : i === 1 ? '#475569' : '#9A3412',
-                }}>
-                  {i + 1}
-                </div>
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: `hsl(${((emp.userId?.name?.charCodeAt(0) || 65) * 37) % 360}, 55%, 55%)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0,
-                }}>
-                  {emp.userId?.name?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {emp.userId?.name || 'N/A'}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500 }}>{emp.userId?.department || ''}</div>
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#0D9488' }}>
-                  {emp.totalHours}h
-                </div>
-              </div>
-            ));
-          })()}
-        </div>
-
-        {/* Leave Requests Summary (Placeholder) */}
-        <div style={{
-          background: '#fff', borderRadius: 16, padding: 20,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
-          border: '1px solid #F1F5F9',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{
-              width: 28, height: 28, borderRadius: 8, background: '#EDE9FE',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-            }}>📝</span>
-            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Leave Requests</h4>
-          </div>
-          {/* Static placeholders */}
-          {[
-            { label: 'Pending', count: absentToday > 0 ? Math.min(absentToday, 3) : 0, color: '#F59E0B', bg: '#FEF3C7' },
-            { label: 'Approved', count: 0, color: '#10B981', bg: '#D1FAE5' },
-            { label: 'Rejected', count: 0, color: '#EF4444', bg: '#FEE2E2' },
-          ].map((item, i) => (
-            <div key={i} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 0',
-              borderBottom: i < 2 ? '1px solid #F1F5F9' : 'none',
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#475569' }}>{item.label}</span>
-              <span style={{
-                background: item.bg, color: item.color,
-                padding: '2px 12px', borderRadius: 12,
-                fontSize: 12, fontWeight: 700,
-              }}>
-                {item.count}
-              </span>
-            </div>
-          ))}
-          <div style={{
-            marginTop: 12, textAlign: 'center',
-            fontSize: 12, color: '#94A3B8', fontWeight: 500,
-            padding: '8px 0', background: '#F8FAFC', borderRadius: 8,
-          }}>
-            Leave module coming soon
-          </div>
-        </div>
-
-        {/* Team Overview */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1E3A8A, #3B82F6)',
-          borderRadius: 16, padding: 20, color: '#fff',
-        }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 12px' }}>Team Overview</h4>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{totalEmp}</div>
-              <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 500 }}>Total</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{presentToday}</div>
-              <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 500 }}>Present</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{absentToday}</div>
-              <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 500 }}>Absent</div>
-            </div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, height: 6, overflow: 'hidden' }}>
-            <div style={{
-              width: totalEmp > 0 ? `${Math.round((presentToday / totalEmp) * 100)}%` : '0%',
-              height: '100%', background: '#fff', borderRadius: 10,
-              transition: 'width 0.6s ease',
-            }} />
-          </div>
-          <div style={{ fontSize: 11, marginTop: 6, opacity: 0.8, textAlign: 'right' }}>
-            {totalEmp > 0 ? Math.round((presentToday / totalEmp) * 100) : 0}% attendance rate
-          </div>
-        </div>
-      </div>
+      {/* Sidebar removed as per user request */}
+    {/* Improved Responsive styles for mobile: compact KPI cards, left-aligned on mobile */}
+    <style>{`
+      @media (max-width: 1100px) {
+        .manager-dashboard-main {
+          flex-direction: column !important;
+          gap: 0 !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content {
+          width: 100% !important;
+          min-width: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          align-items: flex-start !important;
+        }
+      }
+      @media (max-width: 800px) {
+        .manager-dashboard-main {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content {
+          width: 100% !important;
+          min-width: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          align-items: flex-start !important;
+        }
+      }
+      @media (max-width: 700px) {
+        .manager-dashboard-main {
+          flex-direction: column !important;
+          gap: 0 !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content {
+          width: 100% !important;
+          min-width: 0 !important;
+          padding: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          align-items: flex-start !important;
+        }
+        /* KPI Cards grid: stack vertically, reduce gap and card margin */
+        .manager-dashboard-content > div:first-child {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 4px !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content .KpiCard {
+          min-width: 0 !important;
+          width: 100% !important;
+          margin-bottom: 0 !important;
+          align-items: flex-start !important;
+        }
+        /* Quick Actions grid: stack vertically */
+        .manager-dashboard-content > div:nth-child(3) {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 8px !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content button {
+          font-size: 13px !important;
+          padding: 10px 8px !important;
+        }
+      }
+      @media (max-width: 600px) {
+        .manager-dashboard-content > div {
+          border-radius: 6px !important;
+          box-shadow: none !important;
+          padding-left: 2px !important;
+          padding-right: 2px !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content table {
+          min-width: 320px !important;
+        }
+        .manager-dashboard-content h3, .manager-dashboard-content h4 {
+          font-size: 14px !important;
+        }
+        .manager-dashboard-content p, .manager-dashboard-content span, .manager-dashboard-content td, .manager-dashboard-content th {
+          font-size: 11px !important;
+        }
+        .manager-dashboard-content button {
+          font-size: 12px !important;
+          padding: 8px 4px !important;
+        }
+      }
+      @media (max-width: 400px) {
+        .manager-dashboard-content > div {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          align-items: flex-start !important;
+        }
+        .manager-dashboard-content table {
+          min-width: 220px !important;
+        }
+        .manager-dashboard-content button {
+          font-size: 11px !important;
+          padding: 6px 2px !important;
+        }
+      }
+    `}</style>
     </div>
   );
 }
